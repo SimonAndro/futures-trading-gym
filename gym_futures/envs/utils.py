@@ -90,13 +90,13 @@ class TimeSeriesState:
       # convert list to numpy array for convenience
       data = numpy.array(data)
     self.data = data
-    if close_price_identifier:
+    if close_price_identifier:      
       if type(data)  == numpy.ndarray:
-        self.price = float(data[-1:,close_price_identifier])
+        self.price = float(data[-1:,close_price_identifier].iloc[-1])
       else:
-        self.price = float(data[-1:][close_price_identifier])
+        self.price = float(data[-1:][close_price_identifier].iloc[-1])
     else:
-      self.price = float(data[-1:]["close"])
+      self.price = float(data[-1:]["close"].iloc[-1])
     
     self.timestamp_format = "%Y-%m-%d %H:%M:%S" if not timestamp_format else timestamp_format
 
