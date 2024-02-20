@@ -23,9 +23,9 @@ See `envs.utils.TimeSeriesState` for more details
 
 ### Action Space
 This environment accepts 3 different actions at any time state:
-  - `0` - a buy
-  - `1` - a hold (no action)
-  - `2` - a sell
+  - `0` - a buy -> (long, 1)
+  - `1` - a hold (no action) -> (idle, 0)
+  - `2` - a sell -> (short, -1)
 
 The environment does not allow for more than one contract to be traded at a time.
 If a buy action is submitted with an existing long trade, the action defaults to

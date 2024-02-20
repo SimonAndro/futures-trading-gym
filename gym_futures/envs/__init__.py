@@ -1,1 +1,1 @@
-from gym_futures.envs.futures_env import FuturesEnv
+from .futures_env import FuturesEnv
