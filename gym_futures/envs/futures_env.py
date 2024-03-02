@@ -235,7 +235,7 @@ class FuturesEnv(gym.Env):
         _s, s = self._get_next_state()
         truncated = False
         if self.done:
-            return (None, None, self.done, truncated, None)
+            return (None, 0, self.done, truncated, None)
 
         current_state_price = s.price
         next_state_price = _s.price
