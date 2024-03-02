@@ -215,7 +215,7 @@ class FuturesEnv(gym.Env):
             elif all([self.current_position == 0, self.last_position == -1]):
                 # closed a short
                 dif = - round((self.exit_price - self.entry_price), 2)
-            
+
             n_ticks = math.ceil(dif / self.tick_size)
             gross_profit = n_ticks * self.value_per_tick
             net_profit = gross_profit - (2*self.execution_cost_per_order)
@@ -234,11 +234,9 @@ class FuturesEnv(gym.Env):
         """
         _s, s = self._get_next_state()
         truncated = False
-        if self.done:
-            return (None, 0, self.done, truncated, None)
 
         current_state_price = s.price
-        next_state_price = _s.price
+        next_state_price = _s.price if _s else 0
 
         if action == 0:
             # a buy action signal is received
@@ -246,8 +244,13 @@ class FuturesEnv(gym.Env):
                 # a buy is recommended whilst in a long - no action
                 reward = self.get_reward(s)
                 info = {
-                    "message": "hold - a buy was recommended while in an open long position"}
-                return (_s.to_feature_vector(), reward, self.done, truncated, info)
+                    "message": "hold - a buy was recommended while in an open long position",
+                    "episode": {
+                        "r": self.total_reward,
+                        "l": self.current_index
+                    }
+                }
+                return (_s.to_feature_vector() if _s else None, reward, self.done, truncated, info)
             if self.current_position == 0:
                 # a buy is recommended by the agent whilst no position - creating a long
                 # this fills with pr(fill) == self.fill_probability
@@ -262,12 +265,16 @@ class FuturesEnv(gym.Env):
                     info = {
                         "message": f"timestamp: {str(self.entry_time)}, long trade attempted at: {current_state_price}, filled at: {self.entry_price}"
                     }
-                    return (_s.to_feature_vector(), reward, self.done, truncated, info)
+                    return (_s.to_feature_vector() if _s else None, reward, self.done, truncated, info)
                 else:
                     info = {
-                        "message": "a long was recommended, but was not filled given the current fill probability"
+                        "message": "a long was recommended, but was not filled given the current fill probability",
+                        "episode": {
+                            "r": self.total_reward,
+                            "l": self.current_index
+                        }
                     }
-                    return (_s.to_feature_vector(), reward, self.done, truncated, info)
+                    return (_s.to_feature_vector() if _s else None, reward, self.done, truncated, info)
 
             if self.current_position == -1:
                 # a buy is recommended by the agent whilst in a sell.
@@ -280,18 +287,28 @@ class FuturesEnv(gym.Env):
                 net_profit = reward
 
                 info = {
-                    "message": f"timestamp: {str(s.ts)}, short closed from {self.entry_price} to {self.exit_price} - total profit: {net_profit}"
+                    "message": f"timestamp: {str(s.ts)}, short closed from {self.entry_price} to {self.exit_price} - total profit: {net_profit}",
+                    "episode": {
+                        "r": self.total_reward,
+                        "l": self.current_index
+                    }
                 }
 
                 self._close_position(reward, net_profit)
-        
-                return (_s.to_feature_vector(), reward, self.done, truncated, info)
+
+                return (_s.to_feature_vector() if _s else None, reward, self.done, truncated, info)
 
         elif action == 1:
             # no action recommended
             reward = self.get_reward(s)
-            info = {"message": "no action performed"}
-            return (_s.to_feature_vector(), reward, self.done, truncated, info)
+            info = {
+                "message": "no action performed",
+                "episode": {
+                    "r": self.total_reward,
+                    "l": self.current_index
+                }
+            }
+            return (_s.to_feature_vector() if _s else None,  reward, self.done, truncated, info)
 
         elif action == 2:
             # a sell signal is received
@@ -306,12 +323,16 @@ class FuturesEnv(gym.Env):
                 net_profit = reward
 
                 info = {
-                    "message": f"timestamp: {str(s.ts)}, long closed from {self.entry_price} to {self.exit_price} - total profit: {net_profit}"
+                    "message": f"timestamp: {str(s.ts)}, long closed from {self.entry_price} to {self.exit_price} - total profit: {net_profit}",
+                    "episode": {
+                        "r": self.total_reward,
+                        "l": self.current_index
+                    }
                 }
 
                 self._close_position(reward, net_profit)
 
-                return (_s.to_feature_vector(), reward, self.done, truncated, info)
+                return (_s.to_feature_vector() if _s else None, reward, self.done, truncated, info)
 
             if self.current_position == 0:
                 # a sell is recommended by the agent whilst no position - creating a short
@@ -325,13 +346,21 @@ class FuturesEnv(gym.Env):
                     reward = self.get_reward(s)
 
                     info = {
-                        "message": f"timestamp: {str(self.entry_time)}, short trade attempted at: {current_state_price}, filled at: {self.entry_price}"
+                        "message": f"timestamp: {str(self.entry_time)}, short trade attempted at: {current_state_price}, filled at: {self.entry_price}",
+                        "episode": {
+                            "r": self.total_reward,
+                            "l": self.current_index
+                        }
                     }
-                    return (_s.to_feature_vector(), reward, self.done, truncated, info)
+                    return (_s.to_feature_vector() if _s else None, reward, self.done, truncated, info)
 
                 else:
                     info = {
-                        "message": "a long was recommended, but was not filled given the current fill probability"
+                        "message": "a long was recommended, but was not filled given the current fill probability",
+                        "episode": {
+                            "r": self.total_reward,
+                            "l": self.current_index
+                        }
                     }
                     return (_s.to_feature_vector(), 0, self.done, truncated, info)
 
@@ -339,8 +368,13 @@ class FuturesEnv(gym.Env):
                 # a sell is recommended whilst in a short - no action
                 reward = self.get_reward(s)
                 info = info = {
-                    "message": "hold - a sell was recommended while in an open short position"}
-                return (_s.to_feature_vector(), reward, self.done, truncated, info)
+                    "message": "hold - a sell was recommended while in an open short position",
+                    "episode": {
+                        "r": self.total_reward,
+                        "l": self.current_index
+                    }
+                }
+                return (_s.to_feature_vector() if _s else None, reward, self.done, truncated, info)
 
     def seed(self, seed):
         self.seed = seed
