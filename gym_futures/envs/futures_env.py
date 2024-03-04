@@ -221,6 +221,7 @@ class FuturesEnv(gym.Env):
             net_profit = gross_profit - (2*self.execution_cost_per_order)
 
         self.total_reward += net_profit
+        
         return net_profit
 
     def step(self, action):
@@ -263,7 +264,11 @@ class FuturesEnv(gym.Env):
                     reward = self.get_reward(s)
 
                     info = {
-                        "message": f"timestamp: {str(self.entry_time)}, long trade attempted at: {current_state_price}, filled at: {self.entry_price}"
+                        "message": f"timestamp: {str(self.entry_time)}, long trade attempted at: {current_state_price}, filled at: {self.entry_price}",
+                        "episode": {
+                            "r": self.total_reward,
+                            "l": self.current_index
+                        }
                     }
                     return (_s.to_feature_vector() if _s else None, reward, self.done, truncated, info)
                 else:
